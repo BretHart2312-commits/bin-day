@@ -26,12 +26,9 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-
-  // Never cache API calls — bin data must always be fresh.
   if (url.pathname.startsWith("/api/")) {
     return;
   }
-
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return (
