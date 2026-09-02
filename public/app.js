@@ -72,12 +72,25 @@ function parseLongDate(str) {
   return new Date(year, month, day);
 }
 
+function getCurrentWeekRange(now = new Date()) {
+  const day = now.getDay();
+  const diffToMonday = (day === 0 ? -6 : 1) - day;
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() + diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+}
+
+function fmtRange(start, end) {
+  const opts = { day: "numeric", month: "short" };
+  return `${start.toLocaleDateString("en-GB", opts)} – ${end.toLocaleDateString("en-GB", opts)}`;
+}
+
 function fmtDay(date) {
-  return date.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  return date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 }
 
 async function fetchAddresses(postcode) {
@@ -97,42 +110,60 @@ async function fetchCollections(uprn) {
   return parseCollections(data.tableRows || "");
 }
 
-function renderNextCollection(collections) {
+function renderThisWeek(collections) {
+  const { start, end } = getCurrentWeekRange();
+  weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
+
+  // Use calendar dates rather than times, because collection dates are
+  // parsed as midnight and have no collection-time information.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcoming = collections
-    .filter((c) => c.date >= today)
+  const thisWeek = collections
+    .filter((c) => c.date >= today && c.date <= end)
     .sort((a, b) => a.date - b.date);
 
   binList.innerHTML = "";
 
-  if (upcoming.length === 0) {
-    weekLabel.textContent = "Next collection";
-    binList.innerHTML = '<div class="empty">No upcoming collections scheduled.</div>';
+  // Show the remaining collections this week, as before.
+  if (thisWeek.length > 0) {
+    for (const item of thisWeek) {
+      const row = document.createElement("div");
+      row.className = "bin-item";
+      const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
+      row.innerHTML = `
+        <div class="swatch" style="background:${color}"></div>
+        <div class="bin-info">
+          <div class="bin-type">${item.type}</div>
+          <div class="bin-date">${fmtDay(item.date)}</div>
+        </div>
+      `;
+      binList.appendChild(row);
+    }
     return;
   }
 
-  const nextDate = upcoming[0].date;
-  const nextCollections = upcoming.filter(
-    (c) => c.date.getTime() === nextDate.getTime()
-  );
+  // Nothing remains this week, so show the next scheduled collection.
+  const nextCollection = collections
+    .filter((c) => c.date > end)
+    .sort((a, b) => a.date - b.date)[0];
 
-  weekLabel.textContent = `Next collection: ${fmtDay(nextDate)}`;
-
-  for (const item of nextCollections) {
-    const row = document.createElement("div");
-    row.className = "bin-item";
-    const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
-    row.innerHTML = `
-      <div class="swatch" style="background:${color}"></div>
-      <div class="bin-info">
-        <div class="bin-type">${item.type}</div>
-        <div class="bin-date">${fmtDay(item.date)}</div>
-      </div>
-    `;
-    binList.appendChild(row);
+  if (!nextCollection) {
+    binList.innerHTML = '<div class="empty">No collections scheduled.</div>';
+    return;
   }
+
+  const row = document.createElement("div");
+  row.className = "bin-item";
+  const color = BIN_COLORS[nextCollection.type.toUpperCase()] || "#999";
+  row.innerHTML = `
+    <div class="swatch" style="background:${color}"></div>
+    <div class="bin-info">
+      <div class="bin-type">${nextCollection.type}</div>
+      <div class="bin-date">${fmtDay(nextCollection.date)}</div>
+    </div>
+  `;
+  binList.appendChild(row);
 }
 
 async function loadMainView() {
@@ -147,7 +178,7 @@ async function loadMainView() {
   showSpinner(true);
   try {
     const collections = await fetchCollections(uprn);
-    renderNextCollection(collections);
+    renderThisWeek(collections);
   } catch (err) {
     binList.innerHTML = `<div class="empty">${err.message}</div>`;
   } finally {
