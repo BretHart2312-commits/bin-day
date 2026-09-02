@@ -72,25 +72,12 @@ function parseLongDate(str) {
   return new Date(year, month, day);
 }
 
-function getCurrentWeekRange(now = new Date()) {
-  const day = now.getDay();
-  const diffToMonday = (day === 0 ? -6 : 1) - day;
-  const monday = new Date(now);
-  monday.setHours(0, 0, 0, 0);
-  monday.setDate(monday.getDate() + diffToMonday);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  return { start: monday, end: sunday };
-}
-
-function fmtRange(start, end) {
-  const opts = { day: "numeric", month: "short" };
-  return `${start.toLocaleDateString("en-GB", opts)} – ${end.toLocaleDateString("en-GB", opts)}`;
-}
-
 function fmtDay(date) {
-  return date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
 async function fetchAddresses(postcode) {
@@ -110,20 +97,30 @@ async function fetchCollections(uprn) {
   return parseCollections(data.tableRows || "");
 }
 
-function renderThisWeek(collections) {
-  const { start, end } = getCurrentWeekRange();
-  weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
+function renderNextCollection(collections) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const thisWeek = collections
-    .filter((c) => c.date >= start && c.date <= end)
+  const upcoming = collections
+    .filter((c) => c.date >= today)
     .sort((a, b) => a.date - b.date);
 
   binList.innerHTML = "";
-  if (thisWeek.length === 0) {
-    binList.innerHTML = '<div class="empty">No collections scheduled this week.</div>';
+
+  if (upcoming.length === 0) {
+    weekLabel.textContent = "Next collection";
+    binList.innerHTML = '<div class="empty">No upcoming collections scheduled.</div>';
     return;
   }
-  for (const item of thisWeek) {
+
+  const nextDate = upcoming[0].date;
+  const nextCollections = upcoming.filter(
+    (c) => c.date.getTime() === nextDate.getTime()
+  );
+
+  weekLabel.textContent = `Next collection: ${fmtDay(nextDate)}`;
+
+  for (const item of nextCollections) {
     const row = document.createElement("div");
     row.className = "bin-item";
     const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
@@ -150,7 +147,7 @@ async function loadMainView() {
   showSpinner(true);
   try {
     const collections = await fetchCollections(uprn);
-    renderThisWeek(collections);
+    renderNextCollection(collections);
   } catch (err) {
     binList.innerHTML = `<div class="empty">${err.message}</div>`;
   } finally {
