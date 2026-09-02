@@ -114,32 +114,16 @@ function renderThisWeek(collections) {
   const { start, end } = getCurrentWeekRange();
   weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
 
-  // Normalise today to the start of the calendar day.
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Find all collections from today onwards.
-  const futureCollections = collections
-    .filter((c) => c.date >= today)
+  const thisWeek = collections
+    .filter((c) => c.date >= start && c.date <= end)
     .sort((a, b) => a.date - b.date);
 
   binList.innerHTML = "";
-
-  if (futureCollections.length === 0) {
-    binList.innerHTML = '<div class="empty">No collections scheduled.</div>';
+  if (thisWeek.length === 0) {
+    binList.innerHTML = '<div class="empty">No collections scheduled this week.</div>';
     return;
   }
-
-  // If there are collections remaining this week, show them all.
-  const thisWeek = futureCollections.filter(
-    (c) => c.date <= end
-  );
-
-  const collectionsToShow = thisWeek.length > 0
-    ? thisWeek
-    : [futureCollections[0]];
-
-  for (const item of collectionsToShow) {
+  for (const item of thisWeek) {
     const row = document.createElement("div");
     row.className = "bin-item";
     const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
