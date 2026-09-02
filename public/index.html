@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bin Day</title>
+<meta name="theme-color" content="#1d4d3e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg:#f4f6f5; --card:#ffffff; --ink:#16241f; --muted:#5c6b66;
+    --brand:#1d4d3e; --brand-light:#e7f0ed; --danger:#b3261e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:24px 16px 48px;
+  }
+  h1{font-size:1.4rem; margin:8px 0 4px;}
+  .sub{color:var(--muted); font-size:.9rem; margin-bottom:20px; text-align:center;}
+  .card{
+    background:var(--card); border-radius:16px; padding:20px;
+    width:100%; max-width:420px; box-shadow:0 1px 3px rgba(0,0,0,.08);
+    margin-bottom:16px;
+  }
+  label{display:block; font-size:.85rem; font-weight:600; margin-bottom:6px;}
+  input[type=text]{
+    width:100%; padding:12px 14px; border:1px solid #d5dbd8; border-radius:10px;
+    font-size:1rem; margin-bottom:14px;
+  }
+  button{
+    width:100%; padding:13px; border:none; border-radius:10px;
+    background:var(--brand); color:#fff; font-size:1rem; font-weight:600;
+    cursor:pointer;
+  }
+  button.secondary{
+    background:transparent; color:var(--brand); border:1px solid var(--brand);
+    margin-top:8px;
+  }
+  button:disabled{opacity:.6;}
+  .addr-list{list-style:none; padding:0; margin:0; max-height:280px; overflow-y:auto;}
+  .addr-list li{
+    padding:12px 10px; border-bottom:1px solid #eef1f0; cursor:pointer; font-size:.95rem;
+  }
+  .addr-list li:hover{background:var(--brand-light);}
+  .error{color:var(--danger); font-size:.85rem; margin:-6px 0 12px;}
+  .week-label{font-size:.85rem; color:var(--muted); margin-bottom:10px;}
+  .bin-item{
+    display:flex; align-items:center; gap:12px; padding:14px 4px;
+    border-bottom:1px solid #eef1f0;
+  }
+  .bin-item:last-child{border-bottom:none;}
+  .swatch{width:16px; height:16px; border-radius:4px; flex-shrink:0;}
+  .bin-info{flex:1;}
+  .bin-type{font-weight:600; font-size:.95rem;}
+  .bin-date{color:var(--muted); font-size:.85rem;}
+  .empty{color:var(--muted); font-size:.9rem; text-align:center; padding:20px 0;}
+  .addr-current{font-size:.85rem; color:var(--muted); margin-bottom:14px;}
+  .spinner{
+    width:22px; height:22px; border:3px solid #d5dbd8; border-top-color:var(--brand);
+    border-radius:50%; animation:spin .7s linear infinite; margin:20px auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .hidden{display:none !important;}
+  footer{color:var(--muted); font-size:.75rem; margin-top:8px; text-align:center;}
+</style>
+</head>
+<body>
+
+<h1>🗑️ Bin Day</h1>
+<p class="sub">Greater Cambridge Shared Waste — this week's collections</p>
+
+<div class="card" id="setup-postcode">
+  <label for="postcode">Postcode</label>
+  <input type="text" id="postcode" placeholder="e.g. CB1 3AB" autocomplete="postal-code">
+  <div class="error hidden" id="postcode-error"></div>
+  <button id="btn-find-address">Find address</button>
+</div>
+
+<div class="card hidden" id="setup-address">
+  <label>Select your address</label>
+  <ul class="addr-list" id="addr-list"></ul>
+  <button class="secondary" id="btn-back-postcode">Back</button>
+</div>
+
+<div class="card hidden" id="main-view">
+  <div class="addr-current" id="addr-current"></div>
+  <div class="week-label" id="week-label"></div>
+  <div id="bin-list"></div>
+  <button class="secondary" id="btn-change-address">Change address</button>
+</div>
+
+<div class="spinner hidden" id="spinner"></div>
+
+<footer>Data from greatercambridgewaste.org · Stored only on this device</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
