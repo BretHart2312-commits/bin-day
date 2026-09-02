@@ -1,7 +1,3 @@
-// ---- Config ----
-// This proxy path is served by a serverless function living alongside this
-// static site (see /functions/api/*.js). It forwards requests server-to-side
-// to greatercambridgewaste.org so the browser doesn't hit CORS restrictions.
 const API_BASE = "/api";
 
 const STORAGE_KEYS = {
@@ -16,7 +12,6 @@ const BIN_COLORS = {
   "FOOD CADDY": "#8a5a2b",
 };
 
-// ---- Elements ----
 const el = (id) => document.getElementById(id);
 const setupPostcode = el("setup-postcode");
 const setupAddress = el("setup-address");
@@ -38,10 +33,7 @@ function showSpinner(show) {
   spinner.classList.toggle("hidden", !show);
 }
 
-// ---- Parsing helpers (mirrors the logic used by the source integration) ----
 function parseAddresses(html) {
-  // Each address link looks like:
-  // data-address="1 Foo Street, Cambridge, CB1 3AB" ... data-id="12345"
   const re = /data-address\s*=\s*"([^"]+)"[\s\S]*?data-id\s*=\s*"([^"]+)"/gi;
   const out = [];
   let m;
@@ -52,7 +44,6 @@ function parseAddresses(html) {
 }
 
 function parseCollections(html) {
-  // Each entry looks like: aria-label="BLACK BIN collection on Monday 04 August 2026"
   const re = /aria-label="([^"]+)"/gi;
   const out = [];
   let m;
@@ -68,7 +59,6 @@ function parseCollections(html) {
 }
 
 function parseLongDate(str) {
-  // "Monday 04 August 2026" -> Date
   const months = {
     january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
     july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
@@ -82,9 +72,8 @@ function parseLongDate(str) {
   return new Date(year, month, day);
 }
 
-// ---- Week filtering ----
 function getCurrentWeekRange(now = new Date()) {
-  const day = now.getDay(); // 0 = Sunday
+  const day = now.getDay();
   const diffToMonday = (day === 0 ? -6 : 1) - day;
   const monday = new Date(now);
   monday.setHours(0, 0, 0, 0);
@@ -104,7 +93,6 @@ function fmtDay(date) {
   return date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 }
 
-// ---- API calls ----
 async function fetchAddresses(postcode) {
   const url = `${API_BASE}/addresses?postcode=${encodeURIComponent(postcode)}`;
   const res = await fetch(url);
@@ -122,7 +110,6 @@ async function fetchCollections(uprn) {
   return parseCollections(data.tableRows || "");
 }
 
-// ---- Rendering ----
 function renderThisWeek(collections) {
   const { start, end } = getCurrentWeekRange();
   weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
@@ -171,7 +158,6 @@ async function loadMainView() {
   }
 }
 
-// ---- Event wiring ----
 el("btn-find-address").addEventListener("click", async () => {
   const postcode = postcodeInput.value.trim();
   postcodeError.classList.add("hidden");
@@ -215,12 +201,10 @@ el("btn-change-address").addEventListener("click", () => {
   showOnly(setupPostcode);
 });
 
-// ---- PWA service worker ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
 }
 
-// ---- Init ----
 loadMainView();
