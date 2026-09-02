@@ -114,56 +114,44 @@ function renderThisWeek(collections) {
   const { start, end } = getCurrentWeekRange();
   weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
 
-  // Use calendar dates rather than times, because collection dates are
-  // parsed as midnight and have no collection-time information.
+  // Normalise today to the start of the calendar day.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const thisWeek = collections
-    .filter((c) => c.date >= today && c.date <= end)
+  // Find all collections from today onwards.
+  const futureCollections = collections
+    .filter((c) => c.date >= today)
     .sort((a, b) => a.date - b.date);
 
   binList.innerHTML = "";
 
-  // Show the remaining collections this week, as before.
-  if (thisWeek.length > 0) {
-    for (const item of thisWeek) {
-      const row = document.createElement("div");
-      row.className = "bin-item";
-      const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
-      row.innerHTML = `
-        <div class="swatch" style="background:${color}"></div>
-        <div class="bin-info">
-          <div class="bin-type">${item.type}</div>
-          <div class="bin-date">${fmtDay(item.date)}</div>
-        </div>
-      `;
-      binList.appendChild(row);
-    }
-    return;
-  }
-
-  // Nothing remains this week, so show the next scheduled collection.
-  const nextCollection = collections
-    .filter((c) => c.date > end)
-    .sort((a, b) => a.date - b.date)[0];
-
-  if (!nextCollection) {
+  if (futureCollections.length === 0) {
     binList.innerHTML = '<div class="empty">No collections scheduled.</div>';
     return;
   }
 
-  const row = document.createElement("div");
-  row.className = "bin-item";
-  const color = BIN_COLORS[nextCollection.type.toUpperCase()] || "#999";
-  row.innerHTML = `
-    <div class="swatch" style="background:${color}"></div>
-    <div class="bin-info">
-      <div class="bin-type">${nextCollection.type}</div>
-      <div class="bin-date">${fmtDay(nextCollection.date)}</div>
-    </div>
-  `;
-  binList.appendChild(row);
+  // If there are collections remaining this week, show them all.
+  const thisWeek = futureCollections.filter(
+    (c) => c.date <= end
+  );
+
+  const collectionsToShow = thisWeek.length > 0
+    ? thisWeek
+    : [futureCollections[0]];
+
+  for (const item of collectionsToShow) {
+    const row = document.createElement("div");
+    row.className = "bin-item";
+    const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
+    row.innerHTML = `
+      <div class="swatch" style="background:${color}"></div>
+      <div class="bin-info">
+        <div class="bin-type">${item.type}</div>
+        <div class="bin-date">${fmtDay(item.date)}</div>
+      </div>
+    `;
+    binList.appendChild(row);
+  }
 }
 
 async function loadMainView() {
