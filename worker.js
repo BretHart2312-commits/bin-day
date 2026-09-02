@@ -1,8 +1,3 @@
-// Cloudflare Worker (with static assets binding).
-// Any request to /api/addresses or /api/collections is proxied
-// server-to-server to greatercambridgewaste.org (avoids browser CORS
-// restrictions). Everything else is served as a static file from ./public.
-
 const UPSTREAM_ADDRESSES = "https://www.greatercambridgewaste.org/bin-calendar/addresses";
 const UPSTREAM_COLLECTIONS = "https://www.greatercambridgewaste.org/bin-calendar/collections";
 
@@ -64,7 +59,6 @@ export default {
       return proxy(UPSTREAM_COLLECTIONS, params);
     }
 
-    // Everything else: serve the static app from ./public
     return env.ASSETS.fetch(request);
   },
 };
