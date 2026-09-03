@@ -110,20 +110,42 @@ async function fetchCollections(uprn) {
   return parseCollections(data.tableRows || "");
 }
 
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 function renderThisWeek(collections) {
   const { start, end } = getCurrentWeekRange();
-  weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
+  const today = startOfToday();
 
-  const thisWeek = collections
-    .filter((c) => c.date >= start && c.date <= end)
+  let items = collections
+    .filter((c) => c.date >= start && c.date <= end && c.date >= today)
     .sort((a, b) => a.date - b.date);
 
+  if (items.length > 0) {
+    weekLabel.textContent = `This week: ${fmtRange(start, end)}`;
+  } else {
+    const future = collections
+      .filter((c) => c.date >= today)
+      .sort((a, b) => a.date - b.date);
+
+    if (future.length > 0) {
+      const nextDate = future[0].date;
+      items = future.filter((c) => c.date.getTime() === nextDate.getTime());
+      weekLabel.textContent = "Next collection:";
+    } else {
+      weekLabel.textContent = "";
+    }
+  }
+
   binList.innerHTML = "";
-  if (thisWeek.length === 0) {
-    binList.innerHTML = '<div class="empty">No collections scheduled this week.</div>';
+  if (items.length === 0) {
+    binList.innerHTML = '<div class="empty">No upcoming collections found.</div>';
     return;
   }
-  for (const item of thisWeek) {
+  for (const item of items) {
     const row = document.createElement("div");
     row.className = "bin-item";
     const color = BIN_COLORS[item.type.toUpperCase()] || "#999";
